@@ -1,4 +1,7 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <dirs>
+<entry loc="/System/Library/Frameworks/JavaVM.framework/Versions/1.4.2/Home" stamp="1285396130000"/>
+<entry loc="/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home" stamp="1316955994000"/>
 <entry loc="/Library/Java/JavaVirtualMachines/1.7.0.jdk/Contents/Home" stamp="1329713750000"/>
+<entry loc="/System/Library/Frameworks/JavaVM.framework/Versions/1.5.0/Home" stamp="1316955994000"/>
 </dirs>
