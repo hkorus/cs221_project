@@ -27,20 +27,19 @@ public class findCommonWords {
 		final Map<String, Integer> wordCount = new HashMap<String, Integer>();
 		final Map<String, Map<String, Integer> > neighborMap = new HashMap<String, Map<String, Integer>>();
 		Vector<String> frequent = new Vector<String>();
+		HashSet<String> stopWords = getStopWords();
+		Queue<String> neighbors = new ArrayBlockingQueue<String>(numNeighbors);
 		for (int i = 7; i <= 9 ; i++) {
 			String filename = "nyt_eng_19940" + i + ".txt";
 
 
 			File file = new File(filename);
-			HashSet<String> stopWords = getStopWords();
 			Scanner scanner = null;
-			Queue<String> neighbors = new ArrayBlockingQueue<String>(numNeighbors);
+
 			try {
 				scanner = new Scanner(new BufferedReader(new FileReader(file)));
 				scanner.useDelimiter("[^A-Za-z]");
 				String token = null;
-
-				
 				int counter = 0;
 
 				// repeat until all words are read
@@ -53,7 +52,7 @@ public class findCommonWords {
 						wordCount.put(token, 1);
 					}
 
-					if(!frequent.contains(token) && !stopWords.contains(token)){
+					if(!neighbors.contains(token) && !stopWords.contains(token)){
 
 						//update neighbors for word that you push (get all the neighbors 10 before the word)
 						//and for the word that you pop (get all the neighbors 10 after the word)
@@ -64,7 +63,9 @@ public class findCommonWords {
 							updateNeighbors(neighborMap, neighbors, neighbors.poll());
 							neighbors.offer(token);
 						}
+					}
 
+					if (!frequent.contains(token)){
 						if(frequent.size()<40) {
 							frequent.add(token);
 							//printFrequent(frequent, wordCount);
@@ -83,6 +84,7 @@ public class findCommonWords {
 							});
 						}
 					}
+
 				}
 
 			} catch (FileNotFoundException e) {
@@ -97,7 +99,7 @@ public class findCommonWords {
 		}
 		printFrequent(frequent, wordCount);
 		printNeighborsSortedByFrequency(neighborMap);
-		
+
 	}
 
 	private static void printNeighborsSortedByFrequency(
