@@ -29,8 +29,8 @@ public class findCommonWords {
 		Vector<String> frequent = new Vector<String>();
 		HashSet<String> stopWords = getStopWords();
 		Queue<String> neighbors = new ArrayBlockingQueue<String>(numNeighbors);
-		for (int i = 7; i <= 9 ; i++) {
-			String filename = "nyt_eng_19940" + i + ".txt";
+		for (int i = 1; i <= 1 ; i++) {
+			String filename = "text" + i + ".txt";
 
 
 			File file = new File(filename);
@@ -45,43 +45,44 @@ public class findCommonWords {
 				// repeat until all words are read
 				while (scanner.hasNext()) {
 					token = scanner.next().trim().toLowerCase(); //.replaceAll("[^A-Za-z]", "");
-
-					if(wordCount.containsKey(token)) {
-						wordCount.put(token, wordCount.get(token)+1);
-					} else {
-						wordCount.put(token, 1);
-					}
-
-					if(!neighbors.contains(token) && !stopWords.contains(token)){
-
-						//update neighbors for word that you push (get all the neighbors 10 before the word)
-						//and for the word that you pop (get all the neighbors 10 after the word)
-						updateNeighbors(neighborMap, neighbors, token);
-						if (neighbors.size() < numNeighbors) {
-							neighbors.offer(token);
+					if (!stopWords.contains(token)) {
+						if(wordCount.containsKey(token)) {
+							wordCount.put(token, wordCount.get(token)+1);
 						} else {
-							updateNeighbors(neighborMap, neighbors, neighbors.poll());
-							neighbors.offer(token);
+							wordCount.put(token, 1);
 						}
-					}
 
-					if (!frequent.contains(token)){
-						if(frequent.size()<40) {
-							frequent.add(token);
-							//printFrequent(frequent, wordCount);
-						} else if(wordCount.get(token)>wordCount.get(frequent.get(frequent.size()-1))) {
+						if(!neighbors.contains(token)){
 
-							frequent.remove(frequent.size()-1);
-							frequent.add(token);
-							counter+=1;
-							System.out.println(token);
+							//update neighbors for word that you push (get all the neighbors 10 before the word)
+							//and for the word that you pop (get all the neighbors 10 after the word)
+							updateNeighbors(neighborMap, neighbors, token);
+							if (neighbors.size() < numNeighbors) {
+								neighbors.offer(token);
+							} else {
+								updateNeighbors(neighborMap, neighbors, neighbors.poll());
+								neighbors.offer(token);
+							}
+						}
 
-							Collections.sort(frequent, new Comparator<String>() {
-								//@Override
-								public int compare(String str1, String str2) {
-									return(wordCount.get(str2) - wordCount.get(str1));
-								}
-							});
+						if (!frequent.contains(token)){
+							if(frequent.size()<40) {
+								frequent.add(token);
+								//printFrequent(frequent, wordCount);
+							} else if(wordCount.get(token)>wordCount.get(frequent.get(frequent.size()-1))) {
+
+								frequent.remove(frequent.size()-1);
+								frequent.add(token);
+								counter+=1;
+								//System.out.println(token);
+
+								Collections.sort(frequent, new Comparator<String>() {
+									//@Override
+									public int compare(String str1, String str2) {
+										return(wordCount.get(str2) - wordCount.get(str1));
+									}
+								});
+							}
 						}
 					}
 
@@ -97,13 +98,66 @@ public class findCommonWords {
 				}
 			}
 		}
-		printFrequent(frequent, wordCount);
-		printNeighborsSortedByFrequency(neighborMap);
+		//printFrequent(frequent, wordCount);
+		printNeighborsSortedByFrequency(neighborMap, wordCount);
+		knn(neighborMap, wordCount);
 
 	}
 
+	private static void knn(Map<String, Map<String, Integer>> neighborMap,
+			Map<String, Integer> wordCount) {
+		Map<String, List<NeighborDistance> > nnMap = new HashMap<String, List<NeighborDistance> >();
+
+		try {
+			BufferedWriter out = new BufferedWriter(new FileWriter("knn_out.txt"));
+		
+			for (String wordA : neighborMap.keySet()) {
+				ArrayList<NeighborDistance> neighborDistances = new ArrayList<NeighborDistance>();
+				for (String wordB : neighborMap.keySet()) {
+					if (!wordA.equals(wordB)) {
+						double dist = getDist(neighborMap.get(wordA), neighborMap.get(wordB));
+						neighborDistances.add(new NeighborDistance(dist, wordB));
+					}
+				}
+
+				Collections.sort(neighborDistances, new Comparator<NeighborDistance>() {
+
+					public int compare(NeighborDistance n1, NeighborDistance n2) {
+						return (int)(n2.getDistance() - n1.getDistance());
+					}
+				});
+				int k = Math.min(numNeighbors,neighborDistances.size());
+				//nnMap.put(wordA, new ArrayList<NeighborDistance>(neighborDistances.subList(0, k)));
+				
+				List<NeighborDistance> kNearest = neighborDistances.subList(0, k);
+				String neighbors = "";
+				for (int i = 0; i < kNearest.size(); i++) {
+					neighbors += kNearest.get(i).getNeighbor() + "=" + kNearest.get(i).getDistance() + " ";
+				}
+				out.write(wordA + ": " + neighbors + "\n");
+			}
+			out.close();
+		}catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+
+	private static double getDist(Map<String, Integer> neighborsA,
+			Map<String, Integer> neighborsB) {
+		double dist = 0.0;
+		for (String neighbor : neighborsA.keySet()) {
+			if (neighborsB.containsKey(neighbor)) {
+				dist += (neighborsA.get(neighbor) + neighborsB.get(neighbor)) /2.0;
+			}
+		}
+		return dist;
+	}
+
 	private static void printNeighborsSortedByFrequency(
-			Map<String, Map<String, Integer>> neighborMap) {
+			Map<String, Map<String, Integer>> neighborMap, final Map<String, Integer> wordCount) {
 		try {
 			BufferedWriter out = new BufferedWriter(new FileWriter("out.txt"));
 			for (String word : neighborMap.keySet()) {
@@ -113,9 +167,18 @@ public class findCommonWords {
 
 					public int compare(Entry<String, Integer> e1,
 							Entry<String, Integer> e2) {
+						//						double e2Norm = (double)(e2.getValue()/Math.log(wordCount.get(e2.getKey())+1));
+						//						double e1Norm = (double)(e1.getValue()/Math.log(wordCount.get(e1.getKey())+1));
+						//						return (int)(e1Norm-e2Norm);
 						return e2.getValue().compareTo(e1.getValue());
 					}
 				});
+				//				out.write(word + ": [");
+				//				for (Entry<String, Integer> entry : sortedNeighbors) {
+				//					System.out.println(entry.getKey() + " localFreq: " + entry.getValue() + " globalFreq: " + wordCount.get(entry.getKey()) + " NORM: " + (double)(entry.getValue()/Math.log(wordCount.get(entry.getKey())+1)));
+				//					out.write(entry.getKey() + "= N" + (double)(entry.getValue()/Math.log(wordCount.get(entry.getKey())+1)) + ", " + entry.getValue() + " ");
+				//				}
+
 				out.write(word + ": " + sortedNeighbors + "\n");
 			}
 			out.close();
@@ -128,21 +191,21 @@ public class findCommonWords {
 	}
 
 	private static void updateNeighbors(Map<String, Map<String, Integer> > neighborMap, Queue<String> neighbors, String token) {
-		if (token.equals("clinton")) {
-			if (!neighborMap.containsKey(token)) {
-				neighborMap.put(token, new HashMap<String, Integer>());
-			}
+		//	if (token.equals("tom")) {
+		if (!neighborMap.containsKey(token)) {
+			neighborMap.put(token, new HashMap<String, Integer>());
+		}
 
-			for (String neighbor : neighbors) {
-				if (!neighbor.equals(token) && !neighbor.contains(token) && !token.contains(neighbor)) {
-					if (neighborMap.get(token).containsKey(neighbor)) {
-						neighborMap.get(token).put(neighbor, neighborMap.get(token).get(neighbor)+1);
-					} else {
-						neighborMap.get(token).put(neighbor, 1);
-					}
+		for (String neighbor : neighbors) {
+			if (!neighbor.equals(token) && !neighbor.contains(token) && !token.contains(neighbor)) {
+				if (neighborMap.get(token).containsKey(neighbor)) {
+					neighborMap.get(token).put(neighbor, neighborMap.get(token).get(neighbor)+1);
+				} else {
+					neighborMap.get(token).put(neighbor, 1);
 				}
 			}
 		}
+		//	}
 	}
 
 	private static HashSet<String> getStopWords() {
