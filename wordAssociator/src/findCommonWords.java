@@ -42,14 +42,14 @@ public class findCommonWords {
 				// repeat until all words are read
 				while (scanner.hasNext()) {
 					token = scanner.next().trim().toLowerCase(); //.replaceAll("[^A-Za-z]", "");
-
-					if(wordCount.containsKey(token)) {
-						wordCount.put(token, wordCount.get(token)+1);
-					} else {
-						wordCount.put(token, 1);
-					}
-
 					if(!stopWords.contains(token)){
+						if(wordCount.containsKey(token)) {
+							wordCount.put(token, wordCount.get(token)+1);
+						} else {
+							wordCount.put(token, 1);
+						}
+
+
 
 						//update neighbors for word that you push (get all the neighbors 10 before the word)
 						//and for the word that you pop (get all the neighbors 10 after the word)
@@ -90,31 +90,31 @@ public class findCommonWords {
 
 			String wordA = "mother";
 			//for (String wordA : neighborMap.keySet()) {
-				ArrayList<NeighborDistance> neighborDistances = new ArrayList<NeighborDistance>();
-				for (String wordB : neighborMap.keySet()) {
-					if (!wordA.equals(wordB)) {
-						double dist = getDist(neighborMap.get(wordA), neighborMap.get(wordB));
-						neighborDistances.add(new NeighborDistance(dist, wordB));
-					}
+			ArrayList<NeighborDistance> neighborDistances = new ArrayList<NeighborDistance>();
+			for (String wordB : neighborMap.keySet()) {
+				if (!wordA.equals(wordB)) {
+					double dist = getDist(neighborMap.get(wordA), neighborMap.get(wordB));
+					neighborDistances.add(new NeighborDistance(dist, wordB));
 				}
+			}
 
-				Collections.sort(neighborDistances, new Comparator<NeighborDistance>() {
+			Collections.sort(neighborDistances, new Comparator<NeighborDistance>() {
 
-					public int compare(NeighborDistance n1, NeighborDistance n2) {
-						if (n2.getDistance() - n1.getDistance() > 0) return 1;
-						if (n2.getDistance() - n1.getDistance() < 0) return -1;
-						return 0;
-					}
-				});
-				int k = Math.min(numNeighbors,neighborDistances.size());
-				//nnMap.put(wordA, new ArrayList<NeighborDistance>(neighborDistances.subList(0, k)));
-
-				List<NeighborDistance> kNearest = neighborDistances.subList(0, k);
-				String neighbors = "";
-				for (int i = 0; i < kNearest.size(); i++) {
-					neighbors += kNearest.get(i).getNeighbor() + "=" + kNearest.get(i).getDistance() + " ";
+				public int compare(NeighborDistance n1, NeighborDistance n2) {
+					if (n2.getDistance() - n1.getDistance() > 0) return 1;
+					if (n2.getDistance() - n1.getDistance() < 0) return -1;
+					return 0;
 				}
-				out.write(wordA + ": " + neighbors + "\n");
+			});
+			int k = Math.min(numNeighbors,neighborDistances.size());
+			//nnMap.put(wordA, new ArrayList<NeighborDistance>(neighborDistances.subList(0, k)));
+
+			List<NeighborDistance> kNearest = neighborDistances.subList(0, k);
+			String neighbors = "";
+			for (int i = 0; i < kNearest.size(); i++) {
+				neighbors += kNearest.get(i).getNeighbor() + "=" + kNearest.get(i).getDistance() + " ";
+			}
+			out.write(wordA + ": " + neighbors + "\n");
 			//}
 			out.close();
 		}catch (FileNotFoundException e) {
