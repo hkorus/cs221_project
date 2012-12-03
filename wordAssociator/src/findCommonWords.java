@@ -12,9 +12,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
-import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Scanner;
 import java.util.Vector;
@@ -26,7 +24,6 @@ public class findCommonWords {
 	public static void main(String[] args) {
 		final Map<String, Integer> wordCount = new HashMap<String, Integer>();
 		final Map<String, Map<String, Integer> > neighborMap = new HashMap<String, Map<String, Integer>>();
-		Vector<String> frequent = new Vector<String>();
 
 		HashSet<String> stopWords = getStopWords();
 		Queue<String> neighbors = new ArrayBlockingQueue<String>(numNeighbors);
@@ -45,7 +42,6 @@ public class findCommonWords {
 				scanner = new Scanner(new BufferedReader(new FileReader(file)));
 				scanner.useDelimiter("[^A-Za-z]");
 				String token = null;
-				int counter = 0;
 
 				// repeat until all words are read
 				while (scanner.hasNext()) {
@@ -57,7 +53,7 @@ public class findCommonWords {
 						wordCount.put(token, 1);
 					}
 
-					if(!frequent.contains(token) && !stopWords.contains(token)){
+					if(!stopWords.contains(token)){
 
 						//update neighbors for word that you push (get all the neighbors 10 before the word)
 						//and for the word that you pop (get all the neighbors 10 after the word)
@@ -67,24 +63,6 @@ public class findCommonWords {
 						} else {
 							updateNeighbors(neighborMap, neighbors, neighbors.poll(), listCount, wordsOfInterest);
 							neighbors.offer(token);
-						}
-
-						if(frequent.size()<40) {
-							frequent.add(token);
-							//printFrequent(frequent, wordCount);
-						} else if(wordCount.get(token)>wordCount.get(frequent.get(frequent.size()-1))) {
-
-							frequent.remove(frequent.size()-1);
-							frequent.add(token);
-							counter+=1;
-							//System.out.println(token);
-
-							Collections.sort(frequent, new Comparator<String>() {
-								//@Override
-								public int compare(String str1, String str2) {
-									return(wordCount.get(str2) - wordCount.get(str1));
-								}
-							});
 						}
 					}
 
@@ -101,7 +79,6 @@ public class findCommonWords {
 			}
 		}
 
-		//printFrequent(frequent, wordCount);
 		printNeighborsSortedByFrequency(neighborMap);
 		sortByTFILF(neighborMap, wordCount, listCount);
 		knn(neighborMap, wordCount, wordsOfInterest);
@@ -133,6 +110,7 @@ public class findCommonWords {
 						//System.out.println("n1:" +n1.getDistance() + " n2:" + n2.getDistance() + "\n");
 						if(n2.getDistance() - n1.getDistance() > 0) return 1;
 						if(n2.getDistance() - n1.getDistance() < 0) return -1;
+
 						return 0;
 					}
 				});
@@ -220,7 +198,7 @@ public class findCommonWords {
 			Map<String, Integer> list = neighborMap.get(word);
 			for (String reWeight : list.keySet()){
 				int tfilf = (int) (list.get(reWeight)*Math.log(neighborMap.keySet().size() / listCount.get(reWeight)));
-				neighborMap.get(word).put(reWeight, tfilf*list.get(reWeight));
+				neighborMap.get(word).put(reWeight, tfilf);
 			}
 		}
 	}
@@ -241,10 +219,4 @@ public class findCommonWords {
 		return stopWords;
 	}
 
-	private static void printFrequent(Vector<String> frequent, Map<String, Integer> wordCount) {
-		System.out.println("printing frequent");
-		for(int i =0; i<frequent.size(); i++){
-			System.out.println(frequent.get(i) + " count: " + wordCount.get(frequent.get(i)));
-		}
-	}
 }
