@@ -32,8 +32,8 @@ public class findCommonWords {
 		Queue<String> neighbors = new ArrayBlockingQueue<String>(numNeighbors);
 
 		Map<String, Integer> listCount = new HashMap<String, Integer>();
-		for (int i = 7; i <= 7 ; i++) {
-			String filename = "smalldict.txt";
+		for (int i = 1; i <= 1; i++) {
+			String filename = "text" + i + ".txt";
 
 			File file = new File(filename);
 			Scanner scanner = null;
