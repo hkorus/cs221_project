@@ -1,0 +1,6 @@
+1 Tom Swayer
+2 nyt_eng_199407
+3 nyt_eng_199408
+4 nyt_eng_199409
+5 nyt_eng_199410
+6 Alice in Wonderland
