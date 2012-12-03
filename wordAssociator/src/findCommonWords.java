@@ -32,6 +32,20 @@ public class findCommonWords {
 		
 		Vector<String> wordsOfInterest = new Vector<String>();
 		wordsOfInterest.add("clinton");
+
+		getWordStats(wordCount, neighborMap, stopWords, neighbors, listCount, wordsOfInterest);
+
+		printNeighborsSortedByFrequency(neighborMap);
+		sortByTFILF(neighborMap, wordCount, listCount);
+		knn(neighborMap, wordCount, wordsOfInterest);
+
+		
+		
+		
+	}
+	
+	
+	private static void getWordStats(Map<String, Integer> wordCount, Map<String, Map<String, Integer>> neighborMap, HashSet<String> stopWords, Queue<String> neighbors, Map<String, Integer> listCount, Vector<String> wordsOfInterest){
 		for (int i = 1; i <= 6; i++) {
 			String filename = "text" + i + ".txt";
 
@@ -46,6 +60,7 @@ public class findCommonWords {
 				// repeat until all words are read
 				while (scanner.hasNext()) {
 					token = scanner.next().trim().toLowerCase(); //.replaceAll("[^A-Za-z]", "");
+					if(!stopWords.contains(token)){
 
 					if(wordCount.containsKey(token)) {
 						wordCount.put(token, wordCount.get(token)+1);
@@ -53,7 +68,6 @@ public class findCommonWords {
 						wordCount.put(token, 1);
 					}
 
-					if(!stopWords.contains(token)){
 
 						//update neighbors for word that you push (get all the neighbors 10 before the word)
 						//and for the word that you pop (get all the neighbors 10 after the word)
@@ -78,11 +92,6 @@ public class findCommonWords {
 				}
 			}
 		}
-
-		printNeighborsSortedByFrequency(neighborMap);
-		sortByTFILF(neighborMap, wordCount, listCount);
-		knn(neighborMap, wordCount, wordsOfInterest);
-
 	}
 
 	private static void knn(Map<String, Map<String, Integer>> neighborMap,
