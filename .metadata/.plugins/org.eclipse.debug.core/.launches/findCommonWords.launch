@@ -8,4 +8,5 @@
 </listAttribute>
 <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="findCommonWords"/>
 <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="wordAssociator"/>
+<stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-Xmx1024M"/>
 </launchConfiguration>

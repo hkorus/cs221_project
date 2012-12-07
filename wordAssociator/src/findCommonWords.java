@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -23,7 +24,8 @@ public class findCommonWords {
 
 	public static void main(String[] args) {
 		final Map<String, Integer> wordCount = new HashMap<String, Integer>();
-		final Map<String, Map<String, Integer> > neighborMap = new HashMap<String, Map<String, Integer>>();
+		final Map<String, Map<String, Integer>> neighborMap = new HashMap<String, Map<String, Integer>>();
+
 
 		HashSet<String> stopWords = getStopWords();
 		Queue<String> neighbors = new ArrayBlockingQueue<String>(numNeighbors);
@@ -31,20 +33,43 @@ public class findCommonWords {
 		Map<String, Integer> listCount = new HashMap<String, Integer>();
 
 		Vector<String> wordsOfInterest = new Vector<String>();
-		wordsOfInterest.add("clinton");
+		wordsOfInterest.add("mother");
+		wordsOfInterest.add("angry");
+		wordsOfInterest.add("face");
+		wordsOfInterest.add("bright");
+		wordsOfInterest.add("wood");
+		wordsOfInterest.add("flower");
+		wordsOfInterest.add("theory");
+		wordsOfInterest.add("book");
+		wordsOfInterest.add("history");
+		wordsOfInterest.add("transparent");
+		wordsOfInterest.add("death");
+		wordsOfInterest.add("count");
+		wordsOfInterest.add("knowledge");
+		wordsOfInterest.add("sweat");
+		wordsOfInterest.add("challenge");
+		wordsOfInterest.add("orange");
+		wordsOfInterest.add("hostage");
+		wordsOfInterest.add("war");
+		wordsOfInterest.add("routine");
+		wordsOfInterest.add("end");
 
 		getWordStats(wordCount, neighborMap, stopWords, neighbors, listCount, wordsOfInterest);
 
-		printNeighborsSortedByFrequency(neighborMap);
+		//printNeighborsSortedByFrequency(neighborMap);
 		sortByTFILF(neighborMap, wordCount, listCount);
+		printNeighborsSortedByFrequency(neighborMap);
 		knn(neighborMap, wordCount, wordsOfInterest);
 	}
 
 
-	private static void getWordStats(Map<String, Integer> wordCount, Map<String, Map<String, Integer>> neighborMap, HashSet<String> stopWords, Queue<String> neighbors, Map<String, Integer> listCount, Vector<String> wordsOfInterest){
-		for (int i = 1; i <= 6; i++) {
-			String filename = "text" + i + ".txt";
 
+
+
+	private static void getWordStats(Map<String, Integer> wordCount, Map<String, Map<String, Integer>> neighborMap, HashSet<String> stopWords, Queue<String> neighbors, Map<String, Integer> listCount, Vector<String> wordsOfInterest){
+		for (int i = 1; i <=1; i++) {
+			//String filename = "text" + i + ".txt";
+			String filename = "wikipedia2text-extracted.txt";
 			File file = new File(filename);
 			Scanner scanner = null;
 
@@ -56,8 +81,8 @@ public class findCommonWords {
 				// repeat until all words are read
 				while (scanner.hasNext()) {
 					token = scanner.next().trim().toLowerCase(); //.replaceAll("[^A-Za-z]", "");
-					if(!stopWords.contains(token)){
-
+					if(!stopWords.contains(token) && token.trim().length() > 0){
+						//System.out.println(token);
 						if(wordCount.containsKey(token)) {
 							wordCount.put(token, wordCount.get(token)+1);
 						} else {
@@ -97,17 +122,16 @@ public class findCommonWords {
 
 
 			//for (String wordA : neighborMap.keySet()) {
-
-			//String wordA = "clinton";
-			for(String wordA : wordsOfInterest){
+			for (String wordA : wordsOfInterest) {
+				//String wordA = "clinton";
+				//for(String wordA : wordsOfInterest){
 				ArrayList<NeighborDistance> neighborDistances = new ArrayList<NeighborDistance>();
 				for (String wordB : neighborMap.keySet()) {
 					if (!wordA.equals(wordB)) {
-						double dist = getDist(neighborMap.get(wordA), neighborMap.get(wordB));
+						double dist = getCosDist(neighborMap.get(wordA), neighborMap.get(wordB));
 						neighborDistances.add(new NeighborDistance(dist, wordB));
 					}
 				}
-
 
 				Collections.sort(neighborDistances, new Comparator<NeighborDistance>() {
 
@@ -117,7 +141,7 @@ public class findCommonWords {
 						return 0;
 					}
 				});
-				int k = Math.min(numNeighbors,neighborDistances.size());
+				int k = Math.min(20,neighborDistances.size());
 				//nnMap.put(wordA, new ArrayList<NeighborDistance>(neighborDistances.subList(0, k)));
 
 				List<NeighborDistance> kNearest = neighborDistances.subList(0, k);
@@ -139,12 +163,50 @@ public class findCommonWords {
 	private static double getDist(Map<String, Integer> neighborsA,
 			Map<String, Integer> neighborsB) {
 		double dist = 0.0;
+		double sumA = getSum(neighborsA.values());
+		double sumB = getSum(neighborsB.values());
+		int numWordsInCommon = 0;
 		for (String neighbor : neighborsA.keySet()) {
 			if (neighborsB.containsKey(neighbor)) {
-				dist += (neighborsA.get(neighbor) + neighborsB.get(neighbor)) /2.0;
+				numWordsInCommon++;
+				double weightInA = neighborsA.get(neighbor)/sumA;
+				double weightInB = neighborsB.get(neighbor)/sumB;
+
+				dist = (weightInA - weightInB)*(weightInA - weightInB);
+
+				//dist += (neighborsA.get(neighbor) + neighborsB.get(neighbor)) /2.0;
 			}
+
+			dist = (1)*dist+(0)*numWordsInCommon;
 		}
 		return dist;
+	}
+
+	private static double getCosDist(Map<String, Integer> neighborsA,
+			Map<String, Integer> neighborsB) {
+		double sumA = getSum(neighborsA.values());
+		double sumB = getSum(neighborsB.values());
+		double numerator = 0.0;
+		double denominatorA = 0.0;
+		double denominatorB = 0.0;
+		for (String neighbor : neighborsA.keySet()) {
+			if (neighborsB.containsKey(neighbor)) {
+				numerator += neighborsA.get(neighbor) * neighborsB.get(neighbor);
+			}
+			denominatorA += neighborsA.get(neighbor)*neighborsA.get(neighbor);
+		}
+		for (String neighbor : neighborsB.keySet()) {
+			denominatorB += neighborsB.get(neighbor)*neighborsB.get(neighbor);
+		}
+		return (numerator/Math.sqrt(denominatorA*denominatorB));
+	}
+
+	private static int getSum(Collection<Integer> values) {
+		int sum = 0;
+		for (Integer value : values) {
+			sum += value;
+		}
+		return sum;
 	}
 
 	private static void printNeighborsSortedByFrequency(Map<String, Map<String, Integer>> neighborMap) {
@@ -159,7 +221,7 @@ public class findCommonWords {
 						return e2.getValue().compareTo(e1.getValue());
 					}
 				});
-				out.write(word + ": " + sortedNeighbors + "\n");
+				out.write(word + ": " + sortedNeighbors.subList(0, Math.min(sortedNeighbors.size()-1, 19)) + "\n");
 				//System.out.println(word + ": " + sortedNeighbors + "\n");
 			}
 			out.close();
@@ -172,7 +234,7 @@ public class findCommonWords {
 	}
 
 	private static void updateNeighbors(Map<String, Map<String, Integer> > neighborMap, Queue<String> neighbors, String token, Map<String, Integer> listCount, Vector<String> wordsOfInterest) {
-		if(wordsOfInterest.contains(token)) {
+		//if(wordsOfInterest.contains(token)) {
 			if (!neighborMap.containsKey(token)) {
 				neighborMap.put(token, new HashMap<String, Integer>());
 			}
@@ -182,17 +244,19 @@ public class findCommonWords {
 					if (neighborMap.get(token).containsKey(neighbor)) {
 						neighborMap.get(token).put(neighbor, neighborMap.get(token).get(neighbor)+1);
 					} else {
-						neighborMap.get(token).put(neighbor, 1);
-						if (listCount.containsKey(neighbor)){
-							listCount.put(neighbor, listCount.get(neighbor) + 1);
-						} else{
-							listCount.put(neighbor, 1);
+						if (neighborMap.get(token).size() < 100) {
+							neighborMap.get(token).put(neighbor, 1);
+							if (listCount.containsKey(neighbor)){
+								listCount.put(neighbor, listCount.get(neighbor) + 1);
+							} else{
+								listCount.put(neighbor, 1);
+							}
 						}
 
 					}
 				}
 			}
-		}
+		//}
 	}
 
 
